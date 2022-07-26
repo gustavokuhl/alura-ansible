@@ -1,0 +1,33 @@
+---
+- name: 'Instalando pacotes de dependência do sistema operacional'
+  apt:
+    name: ['mysql-server-5.6', 'python-mysqldb']
+    state: latest
+  become: true
+
+- name: 'Criando o banco do MySQL'
+  mysql_db:
+    name: '{{ wp_db_name }}'
+    login_user: root
+    state: present
+
+- name: 'Criando usuário no MySQL'
+  mysql_user:
+    name: '{{ wp_db_user }}'
+    password: '{{ wp_db_pass }}'
+    priv: '{{ wp_db_name }}.*:ALL'
+    state: present
+    login_user: root
+    host: '{{ item }}'
+  with_items:
+    - '127.0.0.1'
+    - 'localhost'
+    - '{{ wp_host_ip }}'
+
+- name: 'Copiando arquivo de configurações do MySQL'
+  copy:
+    src: 'files/my.cnf'
+    dest: '/etc/mysql/'
+  become: true
+  notify:
+    - restart mysql
